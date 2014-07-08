@@ -19,6 +19,8 @@
 */
 module.exports = function(RED) {
 	
+	console.log("loading eibd/KNX for node-red");
+	
 	var eibd = require('eibd');
 
 	var listeners = {};
@@ -26,19 +28,60 @@ module.exports = function(RED) {
 	listeners['dpt'] = {}; // hashmap of listeners by telegram's datapoint type
 	listeners['src'] = {}; // hashmap of listeners by telegram's source (PA or GA)
 	
-	function EibdControllerNode(n) {
+	/**
+	* send a group write telegram to a group address (see bin/groupswrite and bin/groupwrite)
+	* opts: { host: localhost, port: 6720}
+	* gad: group address '1/2/34'
+	* width: DPT bits width (derived from datatype)
+	* value: the value to write
+	* callback: 
+	*
+	* Usage:   
+	* groupAddrWrite({ host: 'localhost', port: 6720}, '1/2/34', 1, function(err) {
+    *   if(err) console.error(err);
+    * });
+	*/
+	function groupAddrWrite(opts, gad, width, value, callback) {
+	  console.log('groupAddrWrite');
+	  var conn = eibd.Connection();
+	  var address = eibd.str2addr(gad);
+	  var data;
+	  conn.socketRemote(opts, function() {
+		conn.openTGroup(address, 1, function (err) {
+		  if(err && (typeof callback === 'function')) {
+		  	  callback(err) 
+		  } else {
+		  	// most common case
+		  	if (width <= 6) {
+		  		data = new Array(2);
+		  	  	data[0] = 0;
+		  	  	data[1] = 0x80 | value;
+			} else {
+				data = new Array(3);
+				data[0] = 0;
+				data[1] = 0x80; 
+				data[2] = (0xff & value);
+				// TODO: what about strings?
+			}
+			conn.sendAPDU(data, callback);
+		  }
+		});
+	  });
+	}
+
+	function EibdControllerNode(config) {
+		console.log("new EibdControllerNode");
 		RED.nodes.createNode(this,config);
+		this.host = config.host;
+		this.port = config.port;
 		var node = this;
+		//
+		this.sendTelegram = function(gad, width, value) {
+			groupAddrWrite({host: this.host, port: this.port}, gad, width, value, null);
+		}
 		/* ===== Node-Red events ===== */
-		this.on("input", function(msg) {
-			console.log('eibd-controller: this.input');
-			var groupswrite = new eibd.Connection();
-			groupswrite.socketRemote(opts, function() {
-				var dest = eibd.str2addr(msg.payload.groupaddr);
-				groupswrite.openTGroup(dest, 1, function(err) {
-					groupswrite.sendAPDU([0, 0xff&1]);
-				});
-			});
+		this.on("error", function(msg) {
+			
 		});
 		//
 		/* ===== eibd events ===== */
@@ -77,20 +120,45 @@ module.exports = function(RED) {
 	//
 	RED.nodes.registerType("eibd-controller", EibdControllerNode);
 	
-
 	function EibdOut(config) {
+		console.log("new EibdOut");
 		RED.nodes.createNode(this, config);
 		this.name = config.name;
-		this.groupaddr = config.groupaddr;
-		this.datatype = config.datatype;
 		var node = this;
 		var eibdController = RED.nodes.getNode(config.controller);
 		//
 		this.on("input", function(msg) {
 			if (msg != null) {
-				//
+				switch(true) {
+				case /read/.test(msg.topic):
+					break; // TODO
+				case /respon/.test(msg.topic):
+					break; // TODO
+				else:
+					eibdController.sendTelegram(
+						msg.payload.groupaddr,
+						msg.payload.width,
+						msg.payload.value
+					);
 			};
 		});
 	}
-	RED.nodes.registerType("eibd", EibdOut);
+	//
+	RED.nodes.registerType("eibd-out", EibdOut);
+	
+	function EibdIn(config) {
+		console.log("new EibdIn");
+		RED.nodes.createNode(this, config);
+		this.name = config.name;
+		var node = this;
+		var eibdController = RED.nodes.getNode(config.controller);
+		//
+		this.on("input", function(msg) {
+			if (msg != null) {
+				
+			};
+		});
+	}
+	//
+	RED.nodes.registerType("eibd-in", EibdIn);
 }
