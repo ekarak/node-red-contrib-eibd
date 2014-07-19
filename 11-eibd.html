@@ -37,14 +37,6 @@
         <label for="node-input-controller"><i class="icon-bookmark"></i> Controller</label>
         <input type="text" id="node-input-controller">
     </div>
-    <div class="form-row">
-        <label for="node-input-groupaddr"><i class="icon-tag"></i> Group Address</label>
-        <input type="text" id="node-input-groupaddr" placeholder="1/1/1">
-    </div>
-    <div class="form-row">
-        <label for="node-input-datatype"><i class="icon-tag"></i> DPT</label>
-        <input type="text" id="node-input-datatype" placeholder="1.001">
-    </div>
 </script>
 
 <script type="text/x-red" data-template-name="eibd-in">
@@ -56,43 +48,36 @@
         <label for="node-input-controller"><i class="icon-bookmark"></i> Controller</label>
         <input type="text" id="node-input-controller">
     </div>
-    <div class="form-row">
-        <label for="node-input-groupaddr"><i class="icon-tag"></i> Group Address</label>
-        <input type="text" id="node-input-groupaddr" placeholder="1/1/1">
-    </div>
-    <div class="form-row">
-        <label for="node-input-datatype"><i class="icon-tag"></i> DPT</label>
-        <input type="text" id="node-input-datatype" placeholder="1.001">
-    </div>
 </script>
 
 <script type="text/x-red" data-help-name="eibd-out">
     <p>An output KNX node, as defined by a KNX group address and datatype. 
     	Use this to <b>send</b> KNX telegrams.<br/>
-    	<b>msg.topic</b> can be: <ul>
+    	<b>msg.topic</b> can be: 
     	<li>'read': to send a read request to the bus</li>
     	<li>'respond': to send a response to another read request to the bus</li>
     	<li>'write': (<b>default</b>) to write a value to the bus. Can be omitted.</li>
-    	</ul><br/>
-    	<b>msg.payload</b> must be (when doing 'write' requests): {width: X, value: Y}<ul>
-    	<li>width: the width in <b>bits</b> of the payload</li>
+    	<br/>
+    	<b>msg.payload</b> must be (when doing 'write' requests): {width: X, value: Y}
+    	<li>dstgad: the destination <b>group</b> address (eg.'1/2/3')</li>
     	<li>value: the actual value to send</li>
-    	</ul>
+    	<li>width: the width in <b>bits</b> of the payload, defaults to 1 (boolean)</li>
     </p>
 </script>
 
 <script type="text/x-red" data-help-name="eibd-in">
     <p>An input KNX node, as defined by a KNX group address and datatype.
     Use this to <b>inject</b> flows from KNX events<br/>
-   	<b>msg.topic</b> will be: <ul>
+   	<b>msg.topic</b> will be: 
     	<li>'read': when a read request arrives on the bus</li>
     	<li>'respond': when another KNX device responds to a read request on the bus</li>
     	<li>'write': when somebody writes a value to a KNX group address.</li>
-    	</ul><br/>
-    	<b>msg.payload</b> will have the format: {width: X, value: Y}<ul>
+    	<br/>
+    	<b>msg.payload</b> will have the format: {width: X, value: Y}
+    	<li>srcphy: source <b>physical</b> address (eg.'1.1.100')</li>
+    	<li>dstgad: destination <b>group</b> address (eg.'1/2/3')</li>
+    	<li>value: the actual value received</li>
     	<li>width: the width in <b>bits</b> of the payload</li>
-    	<li>value: the actual value received.</li>
-    	</ul>
     </p>
 </script>
 
