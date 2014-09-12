@@ -22,6 +22,7 @@ module.exports = function(RED) {
 	console.log("loading eibd/KNX for node-red");
 	
 	var eibd = require('eibd');
+	var eibdconn = new eibd.Connection();
 
 	/**
 	* ====== EIBD-CONTROLLER ================
@@ -30,7 +31,7 @@ module.exports = function(RED) {
 	* =======================================
 	*/
 	function EibdControllerNode(config) {
-//		console.log("new EibdControllerNode, config: %j", config);
+		console.log("new EibdControllerNode, config: %j", config);
 		RED.nodes.createNode(this, config);
 		this.host = config.host;
 		this.port = config.port;
@@ -40,20 +41,17 @@ module.exports = function(RED) {
 		* Initialize an eibd socket, calling the handler function 
 		* when successfully connected, passing it the eibd connection
 		*/
-		this.initializeEibdSocket = function (handler) {
-			var eibdconn = new eibd.Connection();
-			console.log('connecting to eibd server at %s:%d', config.host, config.port);
+		this.initializeEibdSocket = function (handler) {			
+			//console.log('connecting to eibd server at %s:%d', config.host, config.port);
 			eibdconn.socketRemote({ host: config.host, port: config.port }, function(err) {
 				if (err) {
 					console.log('eibd.socketRemote error: %s', err.code);
 					setTimeout(this, 10000);
 				} else {
-					console.log('...successfully connected to %s:%d', config.host, config.port);
-					if (handler) {
-						console.log('calling handler');
+					console.log('EIBD: successfully connected to %s:%d', config.host, config.port);
+					if (handler && (typeof handler === 'function')) {
 						handler(eibdconn);
-					} else console.log('NOT calling anything!');
-
+					}
 				}
 			});
 		};
@@ -89,7 +87,8 @@ module.exports = function(RED) {
 		RED.nodes.createNode(this, config);
 		this.name = config.name;
 		var node = this;
-		var eibdSendConn = null;
+		var conn;
+
 		var eibdController = RED.nodes.getNode(config.controller);
 
 		/**
@@ -109,13 +108,14 @@ module.exports = function(RED) {
 			console.log('groupAddrWrite gad:%s, dpt:%s, value:%s', dstgad, dpt, value);
 			eibdController.initializeEibdSocket(function(conn) {
 				conn.openTGroup(eibd.str2addr(dstgad), 0, function (err) {
-//					if(err && (typeof callback === 'function')) {
-		//				console.log('error calling openTGroup!: %j', err);
-	//					callback(err);
-			//		} else {
+				//	if(err && (typeof callback === 'function')) {
+				//		console.log('error calling openTGroup!: %j', err);
+				//		callback(err);
+				//	} else {
 						var data = eibdController.formatAPDU(value, dpt);
 						console.log("sendAPDU: %j", JSON.stringify(data));
 						conn.sendAPDU(data, callback);
+						//conn.close();
 				//	}
 				});
 			});
@@ -140,6 +140,9 @@ module.exports = function(RED) {
 				}
 			};
 		});
+		this.on("close", function() {
+			console.log('eibdOut.close');
+		});
 	}
 	RED.nodes.registerType("eibd-out", EibdOut);
 	
@@ -153,6 +156,8 @@ module.exports = function(RED) {
 		console.log('new EIBD-IN, config: %j', config);
 		RED.nodes.createNode(this, config);
 		this.name = config.name;
+		this.conn = null;
+
 		var node = this;
 		var eibdController = RED.nodes.getNode(config.controller);
 		/* ===== Node-Red events ===== */
@@ -161,35 +166,38 @@ module.exports = function(RED) {
 				
 			};
 		});
-		this.on("error", function(msg) {
-			
+		this.on("close", function(msg) {
+			console.log('eibdIn.close');
+			if (eibdconn) {
+				console.log('eibd-in: end() monitor connection');
+				eibdconn.end();
+				eibdconn = null;
+			}
 		});
+//		this.on("error", function(msg) {});
+
 		/* ===== eibd events ===== */
 		// initialize incoming KNX event socket (openGroupSocket)
-		this.handler = function(eibdconn) { 
-			console.log('Initialized eibd socket');
+		// there's only one connection for eibd-in:
+		eibdController.initializeEibdSocket(function(eibdconn) { 
+			//console.log('Initialized eibd socket');
 			eibdconn.openGroupSocket(0, function(parser) {
 				parser.on('write', function(src, dest, dpt, val){
 					console.log('Write from '+src+' to '+dest+': '+val);
-					var msg = {knxtype: 'write', srcphy: src, dstgad: dest, dpt: dpt, value: val};
-					node.send(msg);
+					node.send({	topic: 'knx: write', payload: {'srcphy': src, 'dstgad': dest, 'dpt': dpt, 'value': val }});
 				});
 				//
 				parser.on('response', function(src, dest, val) {
 					console.log('Response from %s to %s: %s', src, dest, val);
-					var msg = {knxtype: 'response', srcphy: src, dstgad: dest, value: val};
-					node.send(msg);
+					node.send({	topic: 'knx: response', payload: {'srcphy': src, 'dstgad': dest, 'value': val }});
 				});
 				//
 				parser.on('read', function(src, dest) {
 					console.log('Read from %s to %s', src, dest);
-					var msg = {knxtype: 'read', srcphy: src, dstgad: desc, value: val};
-					node.send(msg);
+					node.send({ topic: 'knx: read',	payload: {'srcphy': src, 'dstgad': desc, 'value': val }});
 				});
 			}); 
-		};
-		// there's only one connection for eibd-in:
-		eibdController.initializeEibdSocket(this.handler);
+		});
 	}
 	//
 	RED.nodes.registerType("eibd-in", EibdIn);
