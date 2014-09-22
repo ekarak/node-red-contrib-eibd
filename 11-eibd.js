@@ -46,7 +46,7 @@ module.exports = function(RED) {
 			eibdconn.socketRemote({ host: config.host, port: config.port }, function(err) {
 				if (err) {
 					console.log('eibd.socketRemote error: %s', err.code);
-					setTimeout(this, 10000);
+					//setTimeout(this, 10000);
 				} else {
 					console.log('EIBD: successfully connected to %s:%d', config.host, config.port);
 					if (handler && (typeof handler === 'function')) {
