@@ -124,7 +124,16 @@ module.exports = function(RED) {
 		this.on("input", function(msg) {
 			console.log('eibdout.onInput, msg=%j', msg);
 			if (msg != null) {
-				var p = JSON.parse(msg.payload);
+				var p;
+				if (typeof(msg.payload) === "object") {
+					p = msg.payload;
+				} else if (typeof(msg.payload) === "string") {
+					p = JSON.parse(msg.payload);
+				}
+				if (p == null) {
+					console.log('eibdout.onInput: illegal msg.payload!');
+					return;
+				}
 				switch(true) {
 				case /read/.test(msg.topic):
 					break; // TODO
