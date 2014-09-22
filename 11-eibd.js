@@ -128,7 +128,7 @@ module.exports = function(RED) {
 				switch(true) {
 				case /read/.test(msg.topic):
 					break; // TODO
-				case /respon/.test(msg.topic):
+				case /respond/.test(msg.topic):
 					break; // TODO
 				default:				
 					this.groupAddrWrite(p.dstgad, p.value, p.dpt, function(err) {
