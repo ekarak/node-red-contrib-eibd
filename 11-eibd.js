@@ -105,7 +105,7 @@ module.exports = function(RED) {
 		* });
 		*/
 		this.groupAddrWrite = function(dstgad, value, dpt, callback) {
-			console.log('groupAddrWrite gad:%s, dpt:%s, value:%s', dstgad, dpt, value);
+			console.log('groupAddrWrite dstgad:%s, value:%s, dpt:%s', dstgad, value, dpt);
 			eibdController.initializeEibdSocket(function(conn) {
 				conn.openTGroup(eibd.str2addr(dstgad), 0, function (err) {
 				//	if(err && (typeof callback === 'function')) {
