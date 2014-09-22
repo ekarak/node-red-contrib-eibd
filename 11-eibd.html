@@ -58,10 +58,11 @@
     	<li>'respond': to send a response to another read request to the bus</li>
     	<li>'write': (<b>default</b>) to write a value to the bus. Can be omitted.</li>
     	<br/>
-    	<b>msg.payload</b> must be (when doing 'write' requests): {width: X, value: Y}
-    	<li>dstgad: the destination <b>group</b> address (eg.'1/2/3')</li>
-    	<li>value: the actual value to send</li>
-    	<li>width: the width in <b>bits</b> of the payload, defaults to 1 (boolean)</li>
+    	<b>msg.payload</b> must be a JavaScript object or a string in JSON format
+    	(when doing 'write' requests): {"dstgad":"1/2/3", "value":"1", "dpt":"1"}
+    	<li>dstgad: the destination <b>group</b> address (eg."1/2/3")</li>
+    	<li>value: the actual value to send (eg."1")</li>
+    	<li>dpt: the datapoint type (eg."1")</li>
     </p>
 </script>
 
