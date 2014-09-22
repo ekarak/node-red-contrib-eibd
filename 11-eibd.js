@@ -46,7 +46,7 @@ module.exports = function(RED) {
 			eibdconn.socketRemote({ host: config.host, port: config.port }, function(err) {
 				if (err) {
 					console.log('eibd.socketRemote error: %s', err.code);
-					setTimeout(this, 10000);
+					//setTimeout(this, 10000);
 				} else {
 					console.log('EIBD: successfully connected to %s:%d', config.host, config.port);
 					if (handler && (typeof handler === 'function')) {
@@ -105,7 +105,7 @@ module.exports = function(RED) {
 		* });
 		*/
 		this.groupAddrWrite = function(dstgad, value, dpt, callback) {
-			console.log('groupAddrWrite gad:%s, dpt:%s, value:%s', dstgad, dpt, value);
+			console.log('groupAddrWrite dstgad:%s, value:%s, dpt:%s', dstgad, value, dpt);
 			eibdController.initializeEibdSocket(function(conn) {
 				conn.openTGroup(eibd.str2addr(dstgad), 0, function (err) {
 				//	if(err && (typeof callback === 'function')) {
@@ -124,7 +124,16 @@ module.exports = function(RED) {
 		this.on("input", function(msg) {
 			console.log('eibdout.onInput, msg=%j', msg);
 			if (msg != null) {
-				var p = JSON.parse(msg.payload);
+				var p;
+				if (typeof(msg.payload) === "object") {
+					p = msg.payload;
+				} else if (typeof(msg.payload) === "string") {
+					p = JSON.parse(msg.payload);
+				}
+				if (p == null) {
+					console.log('eibdout.onInput: illegal msg.payload!');
+					return;
+				}
 				switch(true) {
 				case /read/.test(msg.topic):
 					break; // TODO
