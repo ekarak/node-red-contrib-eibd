@@ -175,12 +175,10 @@ module.exports = function(RED) {
 				
 			};
 		});
-		this.on("close", function(msg) {
+		this.on("close", function() {
 			console.log('eibdIn.close');
 			if (eibdconn) {
-				console.log('eibd-in: end() monitor connection');
 				eibdconn.end();
-				eibdconn = null;
 			}
 		});
 //		this.on("error", function(msg) {});
