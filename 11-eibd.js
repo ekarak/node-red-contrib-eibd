@@ -60,7 +60,7 @@ module.exports = function(RED) {
 			var data;
 			console.log("formatAPDU value=%j dpt=%j", value, dpt);
 			// most common case
-			if (dpt === '1') {
+			if ((dpt === '1' ) || (dpt === 'DPT1')) {
 				data = new Array(2);
 				data[0] = 0;
 				data[1] = 0x80 | value;
@@ -123,31 +123,29 @@ module.exports = function(RED) {
 				
 		this.on("input", function(msg) {
 			console.log('eibdout.onInput, msg=%j', msg);
-			if (msg != null) {
-				var p;
-				if (typeof(msg.payload) === "object") {
-					p = msg.payload;
-				} else if (typeof(msg.payload) === "string") {
-					p = JSON.parse(msg.payload);
-				}
-				if (p == null) {
-					console.log('eibdout.onInput: illegal msg.payload!');
-					return;
-				}
-				switch(true) {
-				case /read/.test(msg.topic):
-					break; // TODO
-				case /respon/.test(msg.topic):
-					break; // TODO
-				default:				
-					this.groupAddrWrite(p.dstgad, p.value, p.dpt, function(err) {
-							if (err) {
-								console.log('groupAddrWrite error: %j', err);
-								//setTimeout(this.sendTelegram, 10000, dstgad, value, dpt);
-							}
-					});
-				}
-			};
+			if (!(msg && msg.hasOwnProperty('payload'))) return;
+			var payload;
+			if (typeof(msg.payload) === "object") {
+				payload = msg.payload;
+			} else if (typeof(msg.payload) === "string") {
+				payload = JSON.parse(msg.payload);
+			}
+			if (payload == null) {
+				console.log('eibdout.onInput: illegal msg.payload!');
+				return;
+			}
+			switch(true) {
+			case /read/.test(msg.topic):
+				break; // TODO
+			case /respon/.test(msg.topic):
+				break; // TODO
+			default:				
+				this.groupAddrWrite(payload.dstgad, payload.value, payload.dpt, function(err) {
+					if (err) {
+						console.log('groupAddrWrite error: %j', err);
+					}
+				});
+			}
 		});
 		this.on("close", function() {
 			console.log('eibdOut.close');
