@@ -56,18 +56,21 @@ module.exports = function(RED) {
 			});
 		};
 		//
-		this.formatAPDU = function(value, dpt) {
+		// format a KNX APDU (telegram) for sending
+		// 	dpt: TODO handle more than booleans and 4-bit
+		//	apci: 0x00=read, 0x40=response, 0x80=write
+		this.formatAPDU = function(value, dpt, apci) {
 			var data;
 			console.log("formatAPDU value=%j dpt=%j", value, dpt);
 			// most common case
-			if ((dpt === '1' ) || (dpt === 'DPT1')) {
+			if ((dpt === 1) || (dpt === '1' ) || (dpt === 'DPT1')) {
 				data = new Array(2);
 				data[0] = 0;
-				data[1] = 0x80 | value;
+				data[1] = apci | value;
 			} else {
 				data = new Array(3);
 				data[0] = 0;
-				data[1] = 0x80; 
+				data[1] = apci; 
 				data[2] = (0xff & value);
 			// TODO: what about strings?
 			}
@@ -100,23 +103,23 @@ module.exports = function(RED) {
 		* callback: 
 		*
 		* Usage:   
-		* groupAddrWrite({ host: 'localhost', port: 6720}, '1/2/34', 1, 1, function(err) {
+		* groupAddrSend({ host: 'localhost', port: 6720}, '1/2/34', 1, 1, function(err) {
 		*   if(err) console.error(err);
 		* });
 		*/
-		this.groupAddrWrite = function(dstgad, value, dpt, callback) {
-			console.log('groupAddrWrite dstgad:%s, value:%s, dpt:%s', dstgad, value, dpt);
+		this.groupAddrSend = function(dstgad, value, dpt, apci, callback) {
+			console.log('groupAddrSend dstgad:%s, value:%s, dpt:%s', dstgad, value, dpt);
 			eibdController.initializeEibdSocket(function(conn) {
 				conn.openTGroup(eibd.str2addr(dstgad), 0, function (err) {
-				//	if(err && (typeof callback === 'function')) {
-				//		console.log('error calling openTGroup!: %j', err);
-				//		callback(err);
-				//	} else {
-						var data = eibdController.formatAPDU(value, dpt);
+					if(err && (typeof callback === 'function')) {
+						console.log('error calling openTGroup!: %j', err);
+						callback(err);
+					} else {
+						var data = eibdController.formatAPDU(value, dpt, apci || 0x80);
 						console.log("sendAPDU: %j", JSON.stringify(data));
 						conn.sendAPDU(data, callback);
 						//conn.close();
-				//	}
+					}
 				});
 			});
 		}
@@ -134,18 +137,20 @@ module.exports = function(RED) {
 				console.log('eibdout.onInput: illegal msg.payload!');
 				return;
 			}
+		 	var apci; 
 			switch(true) {
-			case /read/.test(msg.topic):
-				break; // TODO
-			case /respon/.test(msg.topic):
-				break; // TODO
-			default:				
-				this.groupAddrWrite(payload.dstgad, payload.value, payload.dpt, function(err) {
-					if (err) {
-						console.log('groupAddrWrite error: %j', err);
-					}
-				});
+				case /read/.test(msg.topic):  
+					apci = 0x00; break;
+				case /respon/.test(msg.topic):
+					apci = 0x40; break;
+				default: apci = 0x80;
 			}
+			this.groupAddrSend(payload.dstgad, payload.value, payload.dpt, apci, function(err) {
+				if (err) {
+					console.log('groupAddrSend error: %j', err);
+				}
+			});
+			
 		});
 		this.on("close", function() {
 			console.log('eibdOut.close');
@@ -199,7 +204,7 @@ module.exports = function(RED) {
 				//
 				parser.on('read', function(src, dest) {
 					console.log('Read from %s to %s', src, dest);
-					node.send({ topic: 'knx: read',	payload: {'srcphy': src, 'dstgad': desc, 'value': val }});
+					node.send({ topic: 'knx: read',	payload: {'srcphy': src, 'dstgad': dest}});
 				});
 			}); 
 		});
