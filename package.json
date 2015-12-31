@@ -3,7 +3,7 @@
   "version": "0.0.3",
   "description": "KNX for node-red through eibd, the open source KNX/EIB daemon",
   "dependencies": {
-    "eibd": "0.2.0"
+    "eibd": "0.3.0"
   },
   "repository": {
     "type": "git",
