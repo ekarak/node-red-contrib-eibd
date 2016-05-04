@@ -127,6 +127,7 @@ module.exports = function(RED) {
 		* });
 		*/
 		this.groupAddrSend = function(dstgad, value, dpt, apci, callback) {
+			if (typeof apci === 'undefined') apci = 0x80;
 			//log('groupAddrSend dstgad:%s, value:%s, dpt:%s', dstgad, value, dpt);
 			// init a new connection from the effectively singleton EibdController
 			this.ctrl.initializeEibdSocket(function(conn) {
@@ -135,7 +136,7 @@ module.exports = function(RED) {
 						log('error calling openTGroup!: %j', err);
 						callback(err);
 					} else {
-						var data = node.formatAPDU(value, dpt, apci || 0x80);
+						var data = node.formatAPDU(value, dpt, apci);
 						//log("sendAPDU: %j", JSON.stringify(data));
 						conn.sendAPDU(data, callback);
 					}
