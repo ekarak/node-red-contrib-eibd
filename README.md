@@ -1,5 +1,9 @@
-node-red-contrib-eibd
-==========================
+### node-red-contrib-eibd
+
+**DEPRECATION NOTICE**
+This project is deprecated as of October 2016. Please point your browser to https://bitbucket.org/ekarak/node-red-contrib-knxjs instead. As such, not much effort is going to be spent here; my limited time will focus on the new [KNX access library for Node that I've written](https://bitbucket.org/ekarak/knx.js)
+Don't get me wrong, eibd is a wonderfully stable piece of software; its just that its scope is limited to experimental environments with a full-blown UNIX box connected to the bus, which is not your average use case. What I'm insterested instead are low-power Javascript microcontrollers like the [Espruino](http://espruino.com/) and the [Tessel 2](https://tessel.io/)
+
 
 KNX/eibd nodes for node-red. Uses the eibd binding for Node.JS (https://github.com/andreek/node-eibd). It will include:
 
