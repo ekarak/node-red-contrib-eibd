@@ -1,0 +1,140 @@
+<script type="text/javascript">
+
+function processCsv(allText) {
+    var allTextLines = allText.split(/\r\n|\n/);
+    var headers = allTextLines[0].split(',');
+    var lines = [];
+
+    for (var i=1; i<allTextLines.length; i++) {
+        var data = allTextLines[i].split(',');
+        if (data.length == headers.length) {
+
+            var tarr = {};
+            for (var j=0; j<headers.length; j++) {
+               tarr[headers[j].slice(1,-1)] = data[j].slice(1,-1);
+            }
+            lines.push(tarr);
+        }
+    }
+    return lines;
+}
+
+    RED.nodes.registerType('select-knx-groupaddress',{
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: {value:""},
+	    groupaddress: {value:""},
+	    groupaddresses: { value:"", type:"group-addresses"},
+	    dpt: {value:"1"}
+	
+        },
+   oneditsave: function() {
+        this.groupaddress = $('#groupvalues-list').val();
+        this.name = JSON.parse(this.groupaddress).gaName;
+},
+
+
+ oneditprepare: function() {
+        var previous = null;
+
+	    // get the config node using the ID:
+	    var configNode = RED.nodes.node(this.groupaddresses);
+
+        // parse csv and generate a groupaddresses array:
+        var csv = processCsv(configNode.csv);
+        var configuredGroupAddresses = [];
+        for (var c=0; c<csv.length; c++) {
+            configuredGroupAddresses.push({value:'{ "ga":"' + csv[c].Address + '", "dpt":"'+ csv[c].DatapointType +'", "gaName":"' + csv[c]['Group name'] + '"}', 
+            label:  csv[c].Address + ' - ' + csv[c]['Group name'] ,hasValue:false});
+        }
+
+        // populate group addresses to select box:
+	    $.each(configuredGroupAddresses, function (i, item) {
+	        $('#groupvalues-list').append($('<option>', { 
+                value: item.value,
+                text : item.label
+	    	}));
+	    });
+
+        // mark node value as selected option:
+        for (var i in configuredGroupAddresses) {
+            if (this.groupaddress == configuredGroupAddresses[i].value) {
+                $('#groupvalues-list').val(this.groupaddress);
+            }
+        }
+
+	},
+        inputs:1,
+        outputs:1,
+        icon: "knx.png",
+        label: function() {
+            return this.name||"select-knx-groupaddress";
+        }
+    });
+
+    function onFileSelected(event) {
+            var selectedFile = event.target.files[0];
+            var reader = new FileReader();
+
+            var result = $('#node-config-input-csv');
+            console.log('result:',result);
+            reader.onload = function(event) {
+                result.val(event.target.result);
+            };
+
+            reader.readAsText(selectedFile,'windows-1252');
+            }
+
+    RED.nodes.registerType('group-addresses',{
+        category: 'config',
+        defaults: {
+            csv: {value:"",required:true},
+	        name: {value:"All My Group Addresses"}
+        },
+        label: function() {
+            return this.name || 'Group Addresses';
+        }
+    });
+</script>
+
+
+<script type="text/x-red" data-template-name="group-addresses">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-csv"><i class="icon-bookmark"></i>Group Addresses as CSV</label>
+        <input type="file" onchange="onFileSelected(event)" style="width:100%">
+        <textarea rows=20 id="node-config-input-csv" style="width:100%">
+    </div>
+
+</script>
+
+
+<script type="text/x-red" data-template-name="select-knx-groupaddress">
+    <div class="form-row">
+        <label for="node-input-groupaddresses"><i class="icon-tag"></i> Group Addresses Set</label>
+        <input type="text" id="node-input-groupaddresses">
+    </div>
+    <div class="form-row">
+        <label for="groupvalues-list"><i class="icon-bookmark"></i>Group Address</label>
+        <select id="groupvalues-list" style="width:100%">
+	        <option>Please select a Group Address </option>
+        </select>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="select-knx-groupaddress">
+    <p>A simple node for group address selection</p>
+</script>
+
+<script type="text/x-red" data-help-name="group-addresses">
+    <p>Please export your group addresses in CSV format from KNX ETS with the following settings:</p>
+    <ul>
+        <li>1/1 Name/Address</li>
+        <li>Seperator: comma  like ","</li>
+    </ul>
+    <pre>"Group name","Address","Central","Unfiltered","Description","DatapointType"</pre>
+</script>

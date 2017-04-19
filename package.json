@@ -15,7 +15,8 @@
   ],
   "node-red": {
     "nodes": {
-      "eibd": "11-eibd.js"
+      "eibd": "11-eibd.js",
+      "select-knx-groupaddress": "/select-knx-groupaddress/select-knx-groupaddress.js"
     }
   },
   "bugs": {
