@@ -7,7 +7,7 @@ Don't get me wrong, eibd is a wonderfully stable piece of software; its just tha
 
 KNX/eibd nodes for node-red. Uses the eibd binding for Node.JS (https://github.com/andreek/node-eibd). It will include:
 
-'eibd-controller' : a unique CONFIG node that holds connection configuration for eibd and will acts as the encapsulator for KNX access. As a node-red 'config' node, it cannot be added to a graph, but it acts as a singleton object that gets created in the the background when you add an 'eibd' or 'eibd-device' node and configure it accordingly.
+'eibd-controller' : a unique CONFIG node that holds connection configuration for eibd and will acts as the encapsulator for KNX access. As a node-red 'config' node, it cannot be added to a graph, but it acts as a singleton object that gets created in the background when you add an 'eibd' or 'eibd-device' node and configure it accordingly.
 
 -- 'eibd-out' : KNX/EIB output node that can send KNX to arbitrary GA's and datatypes, so it can be used with function blocks.
 
